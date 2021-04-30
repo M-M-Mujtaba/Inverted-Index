@@ -5,17 +5,11 @@ from nltk.stem.snowball import SnowballStemmer
 #from nltk.wordnet import WordNetLemmatizer
 from tqdm import tqdm
 from math import sqrt
-import fasttokenizer
-from mosestokenizer import MosesTokenizer
-from execution_time import ExecutionTime
 import re
 
 my_re = re.compile("[a-zA-Z]+-[a-zA-Z]+|[a-zA-Z]+'{0,1}[a-zA-Z]{0,1}")
 
 
-e = ExecutionTime()
-tokenizer = MosesTokenizer('en')
-segmenter = fasttokenizer.Segmenter()
 
 
 #global 
@@ -28,7 +22,7 @@ def document_parser(document):
 
     return parsed_document
 
-@e.timeit
+
 def my_tokenizer(document):
 
     token_positioning = {}
@@ -50,7 +44,7 @@ def my_tokenizer(document):
 def pre_processing(document):
 
     document = document_parser(document)
-    tokens = [None] * 9068 
+    tokens = my_tokenizer(document)
 
     return tokens
 
@@ -66,10 +60,7 @@ def store_doc_info(dir, doc_id, doc_name,tokens):
         doc_info.write(f"{doc_id},{dir}/{doc_name},{doc_len},{doc_mag}\n")
     doc_info.close()
 
-@e.timeit
-def token_time(func, file):
-    tokens = func(file) 
-    return my_re.findall(tokens)
+
 
 
 if __name__ == "__main__":
@@ -77,14 +68,18 @@ if __name__ == "__main__":
     folder = "Inverted-Index/"
     dir_names = ["1", "2", "3" ]
     doc_id = 1
-
+    doc = ""
     for dirs in dir_names:
         for document in tqdm(listdir(folder + dirs)):
-            with open (f"{folder + dirs}/{document}") as doc:
+            with open (f"{folder + dirs}/{document}") as file:
                 # print(f"{folder + dirs}/{document}")
-
-                    tokens = pre_processing(doc.read())
-                    store_doc_info(dirs, doc_id, document, tokens)
+                try:
+                    doc = file.read()
+                except:
+                    print("file reading opsie")
+                    continue
+                tokens = pre_processing(doc)
+                store_doc_info(dirs, doc_id, document, tokens)
 
             doc_id+=1
 
