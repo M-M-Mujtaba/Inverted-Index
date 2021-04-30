@@ -1,6 +1,5 @@
 from os import listdir
 from bs4 import BeautifulSoup
-from tokenizer import tokenize, TOK
 from nltk.stem.snowball import SnowballStemmer
 #from nltk.wordnet import WordNetLemmatizer
 from tqdm import tqdm
@@ -48,41 +47,40 @@ def pre_processing(document):
 
     return tokens
 
-def store_doc_info(dir, doc_id, doc_name,tokens):
+def store_doc_info(doc_info, dir, doc_id, doc_name,tokens):
 
     tok_freqs = [token_info["tf"] for token_info in tokens.values()]
     sum_squares = sum(tf*tf for tf in tok_freqs)
     doc_len = sum(tok_freqs)
     doc_mag = sqrt(sum_squares)
-    #print("here")
 
-    with open("Inverted-Index/Docinfo.txt", "a+") as doc_info:
-        doc_info.write(f"{doc_id},{dir}/{doc_name},{doc_len},{doc_mag}\n")
-    doc_info.close()
+    doc_info.write(f"{doc_id},{dir}/{doc_name},{doc_len},{doc_mag}\n")
+
 
 
 
 
 if __name__ == "__main__":
 
-    folder = "Inverted-Index/"
+
     dir_names = ["1", "2", "3" ]
     doc_id = 1
     doc = ""
-    for dirs in dir_names:
-        for document in tqdm(listdir(folder + dirs)):
-            with open (f"{folder + dirs}/{document}") as file:
-                # print(f"{folder + dirs}/{document}")
-                try:
-                    doc = file.read()
-                except:
-                    print("file reading opsie")
-                    continue
-                tokens = pre_processing(doc)
-                store_doc_info(dirs, doc_id, document, tokens)
+    with open("Docinfo.txt", "a+") as doc_info:
+        for dirs in dir_names:
+            for document in tqdm(listdir(dirs)):
+                with open (f"{dirs}/{document}") as file:
+                    # print(f"{folder + dirs}/{document}")
+                    try:
+                        doc = file.read()
+                    except:
+                        print("file reading opsie")
+                        continue
+                    tokens = pre_processing(doc)
+                    store_doc_info(doc_info, dirs, doc_id, document, tokens)
 
-            doc_id+=1
-
+                doc_id+=1
+    doc_info.close()
 
 
     # file_list = listdir("1")
