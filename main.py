@@ -5,11 +5,9 @@ from nltk.stem.snowball import SnowballStemmer
 from tqdm import tqdm
 from math import sqrt
 import re
-import copy
+import json
 
 my_re = re.compile("[a-zA-Z]+-{0,1}'{0,1}[a-zA-z]*")
-
-
 
 # global
 
@@ -79,7 +77,6 @@ def document_parser(document: str):
     soup = BeautifulSoup(document)
     parsed_document = soup.get_text()
 
-
     return parsed_document
 
 
@@ -103,7 +100,6 @@ def my_tokenizer(document: str):
 
 
 def pre_processing(document: str):
-
     document = document_parser(document)
     tokens = my_tokenizer(document)
 
@@ -115,7 +111,7 @@ def inverter(tokens, doc_id):
     inverted_index = {}
     for key in tokens.keys():
         inverted_index[key] = {}
-        inverted_index[key][doc_id] = tokens[key]
+        inverted_index[key][str(doc_id)] = tokens[key]
         inverted_index[key]["df"] = 1
     inverted_index = dict(sorted(inverted_index.items()))
 
@@ -124,10 +120,12 @@ def inverter(tokens, doc_id):
 
 def merge_index(inverted_index, invt_ind):
     if not inverted_index:
-        return  invt_ind
+        return invt_ind
     else:
         for key in invt_ind.keys():
             if inverted_index.get(key, False):
+                test_inverted = inverted_index[key]
+                test_invt = invt_ind
                 for doc_id in invt_ind[key].keys():
                     if doc_id != 'df':
                         if inverted_index[key].get(doc_id, False):
@@ -136,7 +134,9 @@ def merge_index(inverted_index, invt_ind):
                             inverted_index[key][doc_id]["positions"].extend(invt_ind[key][doc_id]["positions"])
 
                         else:
-                            inverted_index[key][doc_id] = invt_ind[key][doc_id]
+                            docs = list(inverted_index[key].keys())
+                            start = docs[0]
+                            inverted_index[key][str(int(doc_id) - int(start))] = invt_ind[key][doc_id]
                             inverted_index[key]["df"] += 1
             else:
                 inverted_index[key] = invt_ind[key]
@@ -145,7 +145,7 @@ def merge_index(inverted_index, invt_ind):
     return inverted_index
 
 
-def store_doc_info(doc_info,directory: str, doc_name: str, tokens: dict):
+def store_doc_info(doc_info, directory: str, doc_name: str, tokens: dict):
     tok_freqs = [token_info["tf"] for token_info in tokens.values()]
     sum_squares = sum(tf * tf for tf in tok_freqs)
     doc_len = sum(tok_freqs)
@@ -175,11 +175,11 @@ def intersect(posting1: iter, posting2: iter):
 
 
 # Takes a directory of input files and creates an inverted index for them
-def create_inverted_index(directory, doc_id ):
+def create_inverted_index(directory, doc_id, limit):
     # with open("Docinfo.txt", "a+") as doc_info:
     inverted_index = {}
     documents = listdir(directory)
-    for document in tqdm(documents[:10]):
+    for document in tqdm(documents[:doc_id + limit - 1]):
         with open(f"{directory}/{document}") as file:
             # print(f"{folder + dirs}/{document}")
             try:
@@ -199,9 +199,53 @@ def create_inverted_index(directory, doc_id ):
     # doc_info.close()
 
 
+def save_index_to_file(inverted_index, index_file, posting_file):
+    index = {}
+    bytes_written = 0
+    with open(posting_file, "wb") as post_file:
+        for key in inverted_index.keys():
+            index[key] = {'start': bytes_written, 'end': 0}
+            bytes_written += post_file.write(json.dumps(inverted_index[key]).encode('utf-8'))
+            index[key]['end'] = bytes_written
+
+    post_file.close()
+
+    with open(index_file, "w") as ind_file:
+        json.dump(index, ind_file)
+    ind_file.close()
+
+def rebuild_index_from_file(index_file, posting_file):
+    inverted_index = {}
+
+    with open(index_file) as ind_file:
+        index = json.load(ind_file)
+    ind_file.close()
+
+    with open(posting_file, "rb") as post_file:
+        for key in index.keys():
+            post_file.seek(index[key]['start'])
+            posting_byte = post_file.read(index[key]['end'] - index[key]['start'])
+            posting = json.loads(posting_byte)
+            inverted_index[key] = posting
+    post_file.close()
+    return inverted_index
+
+
+
 if __name__ == "__main__":
     doc_id = 1
     doc = ""
     populate_stoplist("stoplist.txt")
-    index , doc_id= create_inverted_index("1", doc_id)
-    print(index)
+    # index1, doc_id = create_inverted_index("1", doc_id, 5)
+    # index2, doc_id = create_inverted_index("1", doc_id, 5)
+    # save_index_to_file(index1, "index-1.json", "posting1.bin")
+    # save_index_to_file(index2, "index-2.json", "posting2.bin")
+    index1 = rebuild_index_from_file("index-1.json", "posting1.bin")
+    index2 = rebuild_index_from_file("index-2.json", "posting2.bin")
+
+    combined = merge_index(index1, index2)
+
+    print(combined['amount'])
+
+
+    # print(index['amount'])
