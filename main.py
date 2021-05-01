@@ -5,12 +5,31 @@ from nltk.stem.snowball import SnowballStemmer
 from tqdm import tqdm
 from math import sqrt
 import re
+import copy
 
 my_re = re.compile("[a-zA-Z]+-{0,1}'{0,1}[a-zA-z]*")
 
+query = ["information", "retrieval", "cs"]
+
+temp = copy.deepcopy(query)
+ans = open("expected_answer.txt", "a")
+
 # global
-stop_list = []
+
 stemmer = SnowballStemmer(language='english')
+
+stop_list = {}
+
+
+def populate_stoplist(file_name):
+    global stop_list
+    try:
+        with open(file_name) as stoplist_file:
+            words = stoplist_file.read()
+    except:
+        print("Incorrect stoplist file path")
+        exit(-1)
+    stop_list = {word: True for word in words.split("\n")}
 
 
 class PostingList:
@@ -68,11 +87,16 @@ def document_parser(document: str):
 
 def my_tokenizer(document: str):
     token_positioning = {}
-    positions_list = []
+    global temp
+    global stop_list
+
     for index, token in enumerate(my_re.findall(document)):
         text = token.lower()
 
-        if text not in stop_list:
+        if not stop_list.get(text, False):
+            if text in temp:
+                temp.remove(text)
+
             text = stemmer.stem(text)
             if token_positioning.get(text, False):
                 token_positioning[text]["positioning"].append(index - token_positioning[text]["positioning"][-1])
@@ -83,10 +107,19 @@ def my_tokenizer(document: str):
     return token_positioning
 
 
-def pre_processing(document: str):
+def pre_processing(document: str, doc_id: int):
+    global temp
+    global ans
+    global query
     document = document_parser(document)
-    tokens = my_tokenizer(document)
 
+    tokens = my_tokenizer(document)
+    if len(temp) < len(query):
+        ans.write(f"Doc_ID,{doc_id} ")
+        for element in list(set(query)-set(temp)):
+            ans.write(f",{element}")
+        ans.write("\n")
+    temp = copy.deepcopy(query)
     return tokens
 
 
@@ -105,7 +138,7 @@ Input: Iterators of both posting list to be intersected
 """
 
 
-def intersect(posting1: iter(), posting2: iter()):
+def intersect(posting1: iter, posting2: iter):
     common_documents = []
     posting1_doc, _ = next(posting1)
     posting2_doc, _ = next(posting2)
@@ -124,6 +157,8 @@ if __name__ == "__main__":
     dir_names = ["1", "2", "3"]
     doc_id = 1
     doc = ""
+    populate_stoplist("stoplist.txt")
+
     with open("Docinfo.txt", "a+") as doc_info:
         for dirs in dir_names:
             for document in tqdm(listdir(dirs)):
@@ -134,11 +169,12 @@ if __name__ == "__main__":
                     except:
                         print("file reading opsie")
                         continue
-                    tokens = pre_processing(doc)
+                    tokens = pre_processing(doc, doc_id)
                     store_doc_info(doc_info, dirs, doc_id, document, tokens)
 
                 doc_id += 1
     doc_info.close()
+
 
     # file_list = listdir("1")
     # file_name = file_list[136]
