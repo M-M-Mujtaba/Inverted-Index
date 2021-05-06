@@ -8,14 +8,15 @@ output: inverted index
 e.g
 {"hello": {3: {"positions": [ 2, 5, 8], "tf":3 }, "df":1,}, "ballo": { 3:{"positinos": [ 2, 5], "tf": 2}}, "df":1}}
 """
-
+list.insert()
 
 def inverter(tokens: dict, doc_id: int):
     inverted_index = {}
     for key in tokens.keys():
         inverted_index[key] = {}
-        inverted_index[key][doc_id] = tokens[key]
         inverted_index[key]["df"] = 1
+        inverted_index[key][doc_id] = tokens[key]
+
 
     # sort the dictionary on token(the key)
     inverted_index = dict(sorted(inverted_index.items()))

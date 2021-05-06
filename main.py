@@ -12,7 +12,7 @@ magnitude is calculated by summing square of all frequencies in doc and then tak
 """
 
 
-def store_doc_info(doc_info, directory: str, doc_id: int ,doc_name: str, tokens: dict):
+def store_doc_info(doc_info, directory: str, doc_id: int, doc_name: str, tokens: dict):
     tok_freqs = [token_info["tf"] for token_info in tokens.values()]
     sum_squares = sum(tf * tf for tf in tok_freqs)
     doc_len = sum(tok_freqs)
@@ -28,13 +28,11 @@ This is one of the core function that creates and saves inverted index for all t
 """
 
 
-# Takes a directory of input files and creates an inverted index for them
 def create_inverted_index(directory, doc_id, limit, stop_file):
-    # with open("Docinfo.txt", "a+") as doc_info:
     inverted_index = {}
     documents_name = listdir(directory)
     documents = []
-    for index, file_name in enumerate(documents_name):  # [:doc_id + limit - 1]
+    for index, file_name in enumerate(documents_name[:doc_id + limit - 1]):  #
         with open(f"{directory}/{file_name}") as file:
             try:
                 doc = file.read()
@@ -62,8 +60,7 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
     return inverted_index, doc_id
 
 
-
 if __name__ == "__main__":
     doc_id = 1
     invt_ind, doc_id = create_inverted_index("1", doc_id, 10, "stoplist.txt")
-    print(invt_ind.keys())
+    print(invt_ind["amount"])
