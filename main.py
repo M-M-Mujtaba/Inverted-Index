@@ -71,10 +71,10 @@ def save_inverted_index(invt_ind, index):
 
 
 if __name__ == "__main__":
-    doc_id = 1
-    directory = input("Enter the directory to create Inverted Inverted index ")
-    invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "/home/fypgantts/Inverted-Index/stoplist.txt")
-    save_inverted_index(invt_ind, "1")
-    print(invt_ind["amazon"])
-    # with open("/home/fypgantts/Inverted-Index/index_1_posting.txt") as posting:
-    #     print(retrieve_from_file(posting, 829))
+    # doc_id = 1
+    # directory = input("Enter the directory to create Inverted Inverted index ")
+    # invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "stoplist.txt")
+    # save_inverted_index(invt_ind, "1")
+    # print(invt_ind["antioxid"])
+    with open("index_1_posting.txt") as posting:
+        print(retrieve_from_file(posting, 2000))

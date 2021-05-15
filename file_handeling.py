@@ -14,7 +14,7 @@ def inverse_difference(input):
     prev = 0
     while True:
         delta_dash = input + prev
-        prev = input
+        prev = delta_dash
         input = yield delta_dash
 
 
@@ -56,7 +56,7 @@ def posting_list_to_dict(the_list):
 
         posting_dict[doc_id]["positions"] = [delta_position.send(position) \
                                              for position in the_list[index: index + terms]]
-        delta_position.send(0)
+        delta_position.send(-delta_position.send(0))
         index += terms
     return posting_dict
 
@@ -67,12 +67,13 @@ def save_to_files(token: str, posting_dict: dict, index ,posting , byte_location
 
     posting_list = posting_dict_to_list(posting_dict)
     bytes_written = 0
-    for val in posting_list[]:
+    for val in posting_list[:-1]:
         bytes_written += posting.write(str(val))
         bytes_written += posting.write(',')
+    bytes_written += posting.write(str(posting_list[-1]))
     bytes_written += posting.write('\n') 
     index.write(f"{token}, {byte_location}\n")
-    return bytes_written
+    return bytes_written + 1
 
 
 def retrieve_from_file(posting, byte_location):
