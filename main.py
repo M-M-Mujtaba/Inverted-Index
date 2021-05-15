@@ -3,6 +3,7 @@ from tqdm import tqdm
 from math import sqrt
 from preprocessing import pre_processing
 from index import inverter, merge_index
+from file_handeling import save_to_files, retrieve_from_file
 
 """
 This function implement's task 4
@@ -59,8 +60,21 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
     doc_info.close()
     return inverted_index, doc_id
 
+def save_inverted_index(invt_ind, index):
+    with open(f"index_{index}_terms.txt", "w") as index_file:
+        with open(f"index_{index}_posting.txt", "w") as posting_file:
+            bytes_written = 0
+            for key in invt_ind.keys():
+                bytes_written += save_to_files(key, invt_ind[key], index_file, posting_file, bytes_written)
+        posting_file.close()
+    index_file.close()
+
 
 if __name__ == "__main__":
     doc_id = 1
-    invt_ind, doc_id = create_inverted_index("1", doc_id, 10, "stoplist.txt")
-    print(invt_ind["amount"])
+    directory = input("Enter the directory to create Inverted Inverted index ")
+    invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "/home/fypgantts/Inverted-Index/stoplist.txt")
+    save_inverted_index(invt_ind, "1")
+    print(invt_ind["amazon"])
+    # with open("/home/fypgantts/Inverted-Index/index_1_posting.txt") as posting:
+    #     print(retrieve_from_file(posting, 829))

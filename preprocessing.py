@@ -69,7 +69,7 @@ def my_tokenizer(document: str, stop_list: list):
 
             text = stemmer.stem(text)
             if token_positioning.get(text, False):  # if the token exists in the dict before
-                token_positioning[text]["positions"].append(index - token_positioning[text]["positions"][-1])
+                token_positioning[text]["positions"].append(index)
                 token_positioning[text]["tf"] += 1
             else:
                 token_positioning[text] = {"positions": [index], "tf": 1}  # create new token entry
