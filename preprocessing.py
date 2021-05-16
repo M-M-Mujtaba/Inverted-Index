@@ -5,7 +5,7 @@ from nltk.stem.snowball import SnowballStemmer
 # from nltk.wordnet import WordNetLemmatizer
 
 
-my_re = re.compile("[a-zA-Z]+-{0,1}'{0,1}[a-zA-z]*")
+my_re = re.compile("[a-zA-Z]+-{0,1}'{0,1}[a-zA-z]+")
 stemmer = SnowballStemmer(language='english')
 
 """
@@ -68,6 +68,7 @@ def my_tokenizer(document: str, stop_list: list):
         if not stop_list.get(text, False):  # if the token is not found in stop list then
 
             text = stemmer.stem(text)
+
             if token_positioning.get(text, False):  # if the token exists in the dict before
                 token_positioning[text]["positions"].append(index)
                 token_positioning[text]["tf"] += 1

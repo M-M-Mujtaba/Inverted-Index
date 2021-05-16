@@ -3,7 +3,8 @@ from tqdm import tqdm
 from math import sqrt
 from preprocessing import pre_processing
 from index import inverter, merge_index
-from file_handeling import save_to_files, retrieve_from_file
+from file_handeling import save_to_files, retrieve_posting_from_file, index_generator
+from query import intersect
 
 """
 This function implement's task 4
@@ -33,7 +34,7 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
     inverted_index = {}
     documents_name = listdir(directory)
     documents = []
-    for index, file_name in enumerate(documents_name[:doc_id + limit - 1]):  #
+    for index, file_name in enumerate(documents_name):  # [:doc_id + limit - 1]):  #
         with open(f"{directory}/{file_name}") as file:
             try:
                 doc = file.read()
@@ -60,6 +61,7 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
     doc_info.close()
     return inverted_index, doc_id
 
+
 def save_inverted_index(invt_ind, index):
     with open(f"index_{index}_terms.txt", "w") as index_file:
         with open(f"index_{index}_posting.txt", "w") as posting_file:
@@ -70,11 +72,61 @@ def save_inverted_index(invt_ind, index):
     index_file.close()
 
 
+# handles only single similar terms for now
+
+
+def merge_all_indexs(dirs):
+    indexs = []
+    postings = []
+    index_generators = []
+    for directory in dirs:
+        index = open(f"index_{directory}_terms.txt")
+        posting = open(f"index_{directory}_posting.txt")
+        ind_genrator = index_generator(index)
+        index_generators.append(ind_genrator)
+        indexs.append(index)
+        postings.append(posting)
+
+    terms = [next(ind) for ind in index_generators]
+    merged_terms = open("inverted_index_terms.txt", "w")
+    merged_postings = open("inverted_index_posting.txt", "w")
+    bytes_written = 0
+    counter = 0
+    while terms:
+        for i, term in enumerate(terms):
+            if term is None:
+                terms.remove(term)
+                indexs.pop(i)
+                postings.pop(i)
+                ind_genrator.pop(i)
+
+        min_pos = terms.index(min(terms))
+        next_list = [min_pos]
+
+        merged = merge_index({}, {terms[min_pos][0]: retrieve_posting_from_file(postings[min_pos], terms[min_pos][1])})
+        for i in range(len(terms)):
+            if i != min_pos:
+                if terms[i] == terms[min_pos]:
+                    merged = merge_index(merged,
+                                         {terms[min_pos][0]: retrieve_posting_from_file(postings[i], terms[i][1])})
+                    next_list.append(i)
+
+        bytes_written += save_to_files(terms[min_pos][0], merged[terms[min_pos][0]], merged_terms, merged_postings, bytes_written)
+
+        for i in next_list:
+            terms[i] = next(index_generators[i])
+            counter += 1
+
+        print(f"{counter} terms processed")
+
+
 if __name__ == "__main__":
     # doc_id = 1
-    # directory = input("Enter the directory to create Inverted Inverted index ")
-    # invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "stoplist.txt")
-    # save_inverted_index(invt_ind, "1")
-    # print(invt_ind["antioxid"])
-    with open("index_1_posting.txt") as posting:
-        print(retrieve_from_file(posting, 2000))
+    dirs = ["1", "2", "3"]
+    # while (directory := input("Enter Directory ")) != "-1":
+    #     dirs.append(directory)
+    #     invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "stoplist.txt")
+    #     save_inverted_index(invt_ind, directory)
+    #
+
+    merge_all_indexs(dirs)

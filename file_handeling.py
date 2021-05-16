@@ -36,6 +36,7 @@ def posting_dict_to_list(the_dict):
         inserted += len(the_dict[docs[i]]["positions"])
     return posting_list
 
+
 def posting_list_to_dict(the_list):
     posting_dict = {}
     index = 0
@@ -61,24 +62,30 @@ def posting_list_to_dict(the_list):
     return posting_dict
 
 
-#print(posting_dict_to_list(test_dict['a-ha']))
+# print(posting_dict_to_list(test_dict['a-ha']))
 
-def save_to_files(token: str, posting_dict: dict, index ,posting , byte_location: int):
-
+def save_to_files(token: str, posting_dict: dict, index, posting, byte_location: int):
     posting_list = posting_dict_to_list(posting_dict)
     bytes_written = 0
     for val in posting_list[:-1]:
         bytes_written += posting.write(str(val))
         bytes_written += posting.write(',')
     bytes_written += posting.write(str(posting_list[-1]))
-    bytes_written += posting.write('\n') 
+    bytes_written += posting.write('\n')
     index.write(f"{token}, {byte_location}\n")
     return bytes_written + 1
 
 
-def retrieve_from_file(posting, byte_location):
+def retrieve_posting_from_file(posting, byte_location):
     posting_list = []
     posting.seek(byte_location)
     posting_text = posting.readline()
     posting_list = [int(val) for val in posting_text[:-1].split(',')]
     return posting_list_to_dict(posting_list)
+
+
+def index_generator(index):
+    while (index_pos := index.readline()) != '':
+        term, byte_postition = index_pos.split(',')
+        yield term, int(byte_postition)
+    yield None
