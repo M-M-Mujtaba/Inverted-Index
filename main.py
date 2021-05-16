@@ -46,7 +46,7 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
             documents.append(doc)
             file.close()
     print(len(documents))
-    with open("Docinfo.txt", "a") as doc_info:
+    with open("Docinfo.txt", "w") as doc_info:
         for index, tokens in tqdm(enumerate(pre_processing(documents, stop_file))):
             if tokens is not None:
                 store_doc_info(doc_info, directory, doc_id, documents_name[index], tokens)
@@ -98,29 +98,37 @@ def merge_all_indexs(dirs):
                 terms.remove(term)
                 indexs.pop(i)
                 postings.pop(i)
-                ind_genrator.pop(i)
+                index_generators.pop(i)
 
-        min_pos = terms.index(min(terms))
-        next_list = [min_pos]
+        if terms:
+            min_pos = terms.index(min(terms))
+            next_list = [min_pos]
 
-        merged = merge_index({}, {terms[min_pos][0]: retrieve_posting_from_file(postings[min_pos], terms[min_pos][1])})
-        for i in range(len(terms)):
-            if i != min_pos:
-                if terms[i] == terms[min_pos]:
-                    merged = merge_index(merged,
-                                         {terms[min_pos][0]: retrieve_posting_from_file(postings[i], terms[i][1])})
-                    next_list.append(i)
+            merged = merge_index({}, {terms[min_pos][0]: retrieve_posting_from_file(postings[min_pos], terms[min_pos][1])})
+            for i in range(len(terms)):
+                if i != min_pos:
+                    if terms[i] == terms[min_pos]:
+                        merged = merge_index(merged,
+                                             {terms[min_pos][0]: retrieve_posting_from_file(postings[i], terms[i][1])})
+                        next_list.append(i)
 
-        bytes_written += save_to_files(terms[min_pos][0], merged[terms[min_pos][0]], merged_terms, merged_postings,
-                                       bytes_written)
+            bytes_written += save_to_files(terms[min_pos][0], merged[terms[min_pos][0]], merged_terms, merged_postings,
+                                           bytes_written)
 
-        for i in next_list:
-            terms[i] = next(index_generators[i])
-            counter += 1
+            for i in next_list:
+                terms[i] = next(index_generators[i])
+                counter += 1
 
         print(f"{counter} terms processed")
 
 
+def load_documents(docs_file):
+    docs_info = {}
+    with open(docs_file) as docfile:
+        while (info := docfile.readline()) != '':
+            id, name, *extra = info.split(',')
+            docs_info[id] = name
+    return docs_info
 
 def page_rank(queries):
     queries = query_processor(queries, "stoplist.txt")
@@ -150,17 +158,26 @@ def page_rank(queries):
 
 if __name__ == "__main__":
     doc_id = 1
-    dirs = ["1", "2", "3"]
+    dirs = [] # ["1", "2", "3"] to directly get to quering
     while (directory := input("Enter Directory and -1 to stop  ")) != "-1":
         dirs.append(directory)
         invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "stoplist.txt")
         save_inverted_index(invt_ind, directory)
 
-    if input("Enter query term and -1 to stop ") == "y":
+    if input("Do you want to merge all ? y to do it ") == "y":
         merge_all_indexs(dirs)
 
     queries = []
     while (query := input("Enter query term and -1 to stop ")) != "-1":
         queries.append(query)
 
-    print(page_rank(queries))
+    doc_info = load_documents("Docinfo.txt")
+    results = page_rank(queries)
+    results.sort()
+
+    if results:
+        print("The query terms were found in the following document")
+        for result in results:
+            print(doc_info[str(result)])
+    else:
+        print("No result found")
