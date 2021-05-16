@@ -1,9 +1,9 @@
 from os import listdir
 from tqdm import tqdm
 from math import sqrt
-from preprocessing import pre_processing
+from preprocessing import pre_processing, query_processor
 from index import inverter, merge_index
-from file_handeling import save_to_files, retrieve_posting_from_file, index_generator
+from file_handeling import save_to_files, retrieve_posting_from_file, index_generator, queryfinder
 from query import intersect
 
 """
@@ -111,7 +111,8 @@ def merge_all_indexs(dirs):
                                          {terms[min_pos][0]: retrieve_posting_from_file(postings[i], terms[i][1])})
                     next_list.append(i)
 
-        bytes_written += save_to_files(terms[min_pos][0], merged[terms[min_pos][0]], merged_terms, merged_postings, bytes_written)
+        bytes_written += save_to_files(terms[min_pos][0], merged[terms[min_pos][0]], merged_terms, merged_postings,
+                                       bytes_written)
 
         for i in next_list:
             terms[i] = next(index_generators[i])
@@ -120,13 +121,46 @@ def merge_all_indexs(dirs):
         print(f"{counter} terms processed")
 
 
-if __name__ == "__main__":
-    # doc_id = 1
-    dirs = ["1", "2", "3"]
-    # while (directory := input("Enter Directory ")) != "-1":
-    #     dirs.append(directory)
-    #     invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "stoplist.txt")
-    #     save_inverted_index(invt_ind, directory)
-    #
 
-    merge_all_indexs(dirs)
+def page_rank(queries):
+    queries = query_processor(queries, "stoplist.txt")
+    with open("inverted_index_terms.txt") as index:
+        locations, not_found = queryfinder(queries, index)
+    index.close()
+
+    if not_found:
+        print("following queriers were not found in the index ", end="     ")
+        for left_out in not_found:
+            print(left_out, end="   ")
+        print()
+
+    with open("inverted_index_posting.txt") as posting:
+        posting_dict = retrieve_posting_from_file(posting, locations[0])
+        docs = list(posting_dict.keys())
+        docs.pop(0)  # removing the df key from the list of docs
+
+        for location in locations[1:]:
+            new_posting_dict = retrieve_posting_from_file(posting, location)
+            new_docs = list(new_posting_dict.keys())
+            new_docs.pop(0)
+            docs.extend(new_docs)
+    posting.close()
+    return list(set(docs))
+
+
+if __name__ == "__main__":
+    doc_id = 1
+    dirs = ["1", "2", "3"]
+    while (directory := input("Enter Directory and -1 to stop  ")) != "-1":
+        dirs.append(directory)
+        invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "stoplist.txt")
+        save_inverted_index(invt_ind, directory)
+
+    if input("Enter query term and -1 to stop ") == "y":
+        merge_all_indexs(dirs)
+
+    queries = []
+    while (query := input("Enter query term and -1 to stop ")) != "-1":
+        queries.append(query)
+
+    print(page_rank(queries))

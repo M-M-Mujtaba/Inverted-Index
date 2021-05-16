@@ -77,7 +77,6 @@ def save_to_files(token: str, posting_dict: dict, index, posting, byte_location:
 
 
 def retrieve_posting_from_file(posting, byte_location):
-    posting_list = []
     posting.seek(byte_location)
     posting_text = posting.readline()
     posting_list = [int(val) for val in posting_text[:-1].split(',')]
@@ -89,3 +88,15 @@ def index_generator(index):
         term, byte_postition = index_pos.split(',')
         yield term, int(byte_postition)
     yield None
+
+
+def queryfinder(queries, index):
+    byte_locations = []
+
+    while (index_pos := index.readline()) != '':
+        term, byte_postition = index_pos.split(',')
+        if term in queries:
+            byte_locations.append(int(byte_postition[:-1]))
+            queries.remove(term)
+
+    return byte_locations, queries

@@ -49,6 +49,14 @@ def document_parser(document: str):
     return parsed_document
 
 
+def query_processor(queires, stop_file):
+    stop_list = populate_stoplist(stop_file)
+    queires = [stemmer.stem(query.lower()) if not stop_list.get(query, False) else "" for query in queires]
+    while "" in queires:
+        queires.remove("")
+    return queires
+
+
 """
 This is the tokenization function it transforms the input text string into set of tokens
 with each token it's position and over document frequency is also provided
