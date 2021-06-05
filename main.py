@@ -34,7 +34,7 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
     inverted_index = {}
     documents_name = listdir(directory)
     documents = []
-    for index, file_name in enumerate(documents_name):  # [:doc_id + limit - 1]):  #
+    for index, file_name in enumerate(documents_name[doc_id : doc_id + limit ]):  #
         with open(f"{directory}/{file_name}") as file:
             try:
                 doc = file.read()
@@ -46,7 +46,7 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
             documents.append(doc)
             file.close()
     print(len(documents))
-    with open("Docinfo.txt", "w") as doc_info:
+    with open("Docinfo.txt", "a") as doc_info:
         for index, tokens in tqdm(enumerate(pre_processing(documents, stop_file))):
             if tokens is not None:
                 store_doc_info(doc_info, directory, doc_id, documents_name[index], tokens)
