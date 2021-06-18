@@ -44,9 +44,10 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
                 file.close()
                 continue
             documents.append(doc)
+
             file.close()
     print(len(documents))
-    with open("Docinfo.txt", "w") as doc_info:
+    with open("Docinfo.txt", "a") as doc_info:
         for index, tokens in tqdm(enumerate(pre_processing(documents, stop_file))):
             if tokens is not None:
                 store_doc_info(doc_info, directory, doc_id, documents_name[index], tokens)
@@ -107,7 +108,7 @@ def merge_all_indexs(dirs):
             merged = merge_index({}, {terms[min_pos][0]: retrieve_posting_from_file(postings[min_pos], terms[min_pos][1])})
             for i in range(len(terms)):
                 if i != min_pos:
-                    if terms[i] == terms[min_pos]:
+                    if terms[i][0] == terms[min_pos][0]:
                         merged = merge_index(merged,
                                              {terms[min_pos][0]: retrieve_posting_from_file(postings[i], terms[i][1])})
                         next_list.append(i)

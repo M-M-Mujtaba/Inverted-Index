@@ -5,7 +5,7 @@ from nltk.stem.snowball import SnowballStemmer
 # from nltk.wordnet import WordNetLemmatizer
 
 
-my_re = re.compile("[a-zA-Z]+-{0,1}'{0,1}[a-zA-z]+")
+my_re = re.compile("[a-zA-Z]+-{0,1}'{0,1}[a-zA-z]*")
 stemmer = SnowballStemmer(language='english')
 
 """
@@ -49,12 +49,14 @@ def document_parser(document: str):
     return parsed_document
 
 
-def query_processor(queires, stop_file):
+def query_processor(query_string, stop_file):
     stop_list = populate_stoplist(stop_file)
-    queires = [stemmer.stem(query.lower()) if not stop_list.get(query, False) else "" for query in queires]
-    while "" in queires:
-        queires.remove("")
-    return queires
+    queries = query_string.split()
+    queries = [my_re.findall(query) for query in queries]
+    queries = [stemmer.stem(query[0].lower()) if not stop_list.get(query[0].lower(), False) else "" for query in queries]
+    while "" in queries:
+        queries.remove("")
+    return queries
 
 
 """
@@ -70,18 +72,24 @@ e.g
 def my_tokenizer(document: str, stop_list: list):
     token_positioning = {}
 
-    for index, token in enumerate(my_re.findall(document)):
-        text = token.lower()
+    tokens = document.split()
+    tokens = [my_re.findall(token) for token in tokens]
+    for index, token in enumerate(tokens):
 
-        if not stop_list.get(text, False):  # if the token is not found in stop list then
+        if token:
 
-            text = stemmer.stem(text)
+            assert type(token[0]) == str
+            text = token[0].lower()
 
-            if token_positioning.get(text, False):  # if the token exists in the dict before
-                token_positioning[text]["positions"].append(index)
-                token_positioning[text]["tf"] += 1
-            else:
-                token_positioning[text] = {"positions": [index], "tf": 1}  # create new token entry
+            if not stop_list.get(text, False):  # if the token is not found in stop list then
+
+                text = stemmer.stem(text)
+
+                if token_positioning.get(text, False):  # if the token exists in the dict before
+                    token_positioning[text]["positions"].append(index)
+                    token_positioning[text]["tf"] += 1
+                else:
+                    token_positioning[text] = {"positions": [index], "tf": 1}  # create new token entry
 
     return token_positioning
 
