@@ -104,12 +104,17 @@ Output: Generator object which yield's token for each document (list of tokens)
 """
 
 
-def pre_processing(documents: list, stop_file):
+def pre_processing(document: str, stop_file):
     stop_list = populate_stoplist(stop_file)
-    for document in documents:
-        document = document_parser(document)
-        if document is None:
-            yield None
-            continue
-        tokens = my_tokenizer(document, stop_list)
-        yield tokens
+
+    parsed_document = document_parser(document)
+    if parsed_document is None:
+        return None
+    tokens = my_tokenizer(parsed_document, stop_list)
+
+    return tokens
+
+if __name__ == "__main__":
+    for tokens in pre_processing([open('1/clueweb12-0001wb-14-04479')], "stoplist.txt"):
+        print(tokens)
+        print('abandon' in list(tokens.keys()))

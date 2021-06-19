@@ -34,32 +34,30 @@ def create_inverted_index(directory, doc_id, limit, stop_file):
     inverted_index = {}
     documents_name = listdir(directory)
     documents = []
-    for index, file_name in enumerate(documents_name):  # [:doc_id + limit - 1]):  #
-        with open(f"{directory}/{file_name}") as file:
-            try:
-                doc = file.read()
-            except:
-                print(f"could not read file {documents_name[index]}")
-                documents_name.pop(index)
-                file.close()
-                continue
-            documents.append(doc)
-
-            file.close()
-    print(len(documents))
     with open("Docinfo.txt", "a") as doc_info:
-        for index, tokens in tqdm(enumerate(pre_processing(documents, stop_file))):
-            if tokens is not None:
-                store_doc_info(doc_info, directory, doc_id, documents_name[index], tokens)
-                inverted = inverter(tokens, doc_id)
-                inverted_index = merge_index(inverted_index, inverted)
-                doc_id += 1
-            else:
-                print(f"body not found for {documents_name[index]}")
-                documents_name.pop(index)
-                documents.pop(index)
+        for index, file_name in enumerate(documents_name):  # [:doc_id + limit - 1]):  #
+            with open(f"{directory}/{file_name}") as file:
+                try:
+                    doc = file.read()
+                except:
+                    print(f"could not read file {documents_name[index]}")
+                    file.close()
+                    continue
+                tokens = pre_processing(doc, stop_file)
+                if tokens is not None:
+                    store_doc_info(doc_info, directory, doc_id, documents_name[index], tokens)
+                    if 'abandon' in list(tokens.keys()):
+                        a = 0
+                    inverted = inverter(tokens, doc_id)
+                    inverted_index = merge_index(inverted_index, inverted)
+                    doc_id += 1
+                else:
+                    print(f"body not found for {documents_name[index]}")
 
-    doc_info.close()
+                file.close()
+        # print(len(documents))
+
+        doc_info.close()
     return inverted_index, doc_id
 
 
@@ -105,7 +103,8 @@ def merge_all_indexs(dirs):
             min_pos = terms.index(min(terms))
             next_list = [min_pos]
 
-            merged = merge_index({}, {terms[min_pos][0]: retrieve_posting_from_file(postings[min_pos], terms[min_pos][1])})
+            merged = merge_index({},
+                                 {terms[min_pos][0]: retrieve_posting_from_file(postings[min_pos], terms[min_pos][1])})
             for i in range(len(terms)):
                 if i != min_pos:
                     if terms[i][0] == terms[min_pos][0]:
@@ -113,6 +112,7 @@ def merge_all_indexs(dirs):
                                              {terms[min_pos][0]: retrieve_posting_from_file(postings[i], terms[i][1])})
                         next_list.append(i)
 
+            print(merged.keys())
             bytes_written += save_to_files(terms[min_pos][0], merged[terms[min_pos][0]], merged_terms, merged_postings,
                                            bytes_written)
 
@@ -130,6 +130,7 @@ def load_documents(docs_file):
             id, name, *extra = info.split(',')
             docs_info[id] = name
     return docs_info
+
 
 def page_rank(queries):
     queries = query_processor(queries, "stoplist.txt")
@@ -159,7 +160,7 @@ def page_rank(queries):
 
 if __name__ == "__main__":
     doc_id = 1
-    dirs = [] # ["1", "2", "3"] to directly get to quering
+    dirs = []  # ["1", "2", "3"] to directly get to quering
     while (directory := input("Enter Directory and -1 to stop  ")) != "-1":
         dirs.append(directory)
         invt_ind, doc_id = create_inverted_index(directory, doc_id, 10, "stoplist.txt")
@@ -168,12 +169,10 @@ if __name__ == "__main__":
     if input("Do you want to merge all ? y to do it ") == "y":
         merge_all_indexs(dirs)
 
-    queries = []
-    while (query := input("Enter query term and -1 to stop ")) != "-1":
-        queries.append(query)
+    query = input("Enter query ")
 
     doc_info = load_documents("Docinfo.txt")
-    results = page_rank(queries)
+    results = page_rank(query)
     results.sort()
 
     if results:
