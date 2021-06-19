@@ -53,6 +53,9 @@ def query_processor(query_string, stop_file):
     stop_list = populate_stoplist(stop_file)
     queries = query_string.split()
     queries = [my_re.findall(query) for query in queries]
+    for i, query in enumerate(queries):
+        if not query:
+            queries.pop(i)
     queries = [stemmer.stem(query[0].lower()) if not stop_list.get(query[0].lower(), False) else "" for query in queries]
     while "" in queries:
         queries.remove("")

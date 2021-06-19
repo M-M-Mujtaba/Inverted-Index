@@ -1,20 +1,33 @@
-"""
+from search import query_score
+from commandlines import Command
+import xml.etree.ElementTree as ET
+from run import run
 
-Input: Iterators of both posting list to be intersected
-Output: list of document which were present in both posting list
-"""
 
 
-def intersect(posting1: list, posting2: list):
-    # common_documents = []
-    # posting1_doc, _ = next(posting1)
-    # posting2_doc, _ = next(posting2)
-    # while posting1_doc is not None and posting2_doc is not None:
-    #     if posting1_doc == posting2_doc:
-    #         common_documents.append(posting1_doc)
-    #     elif posting1_doc > posting2_doc:
-    #         posting2_doc, _ = next(posting2)
-    #     else:
-    #         posting1_doc, _ = next(posting1)
-    # return common_documents
-    return list(set(posting1).intersection(set(posting2)))
+
+
+
+
+if __name__ == "__main__":
+    c = Command()
+
+    default_options = {
+        'score': 'okapi-TF',
+    }
+    c.set_defaults(default_options)
+
+    if c.contains_definitions('score'):
+        score = c.get_definition('score')
+    else :
+        score = c.get_default('score')
+
+    tree = ET.parse('topics.xml')
+    document = tree.getroot()
+    for quries in document:
+        for query in quries:
+
+            if query.tag == 'query':
+                #print(f"from query {quries.attrib['number']}: query {query.text}")
+                for document in query_score(score, query.text):
+                    print(f"{quries.attrib['number']} 0 {document} run{run}")
