@@ -1,0 +1,6 @@
+tqdm~=4.60.0
+commandlines~=0.4.1
+bs4~=0.0.1
+beautifulsoup4~=4.9.3
+nltk~=3.6.2
+matplotlib~=3.4.2

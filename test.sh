@@ -1,0 +1,1 @@
+python query.py --score vector-space > vector-space.txt

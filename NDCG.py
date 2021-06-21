@@ -1,7 +1,9 @@
+from functools import reduce
+
 from commandlines import Command
 from math import log2
 from operator import truediv
-
+from json import dump
 
 
 
@@ -68,23 +70,9 @@ def calc_NDCG(test_score, base_score):
         NDCG[query] = list(map(truediv, test_score[query], base_score[query]))
     return NDCG
 
-if __name__ == "__main__":
-    c = Command()
-
-    default_options = {
-        'p': 3
-    }
-
-    c.set_defaults(default_options)
-
-    if c.contains_definitions('p'):
-        p = int(c.get_definition('p'))
-    else:
-        p = c.get_default('p')
-
-
-    base_score_file = c.arg0
-    my_score_file = c.arg1
+def run_NDGG_for_report(p, my_file):
+    base_score_file = "corpus.qrel"
+    my_score_file = my_file
 
     with open(base_score_file) as corpus:
         base_rank_dict = doc_dict(corpus, True)
@@ -98,7 +86,6 @@ if __name__ == "__main__":
     with open(my_score_file) as my_score:
         document_positions = doc_dict(my_score, False)
 
-
     my_rank_dict = get_scores(document_positions, base_rank_dict, p)
     DCGp = {}
 
@@ -111,5 +98,78 @@ if __name__ == "__main__":
 
     NDCG = calc_NDCG(DCGp, IDCGp)
 
-    for key in NDCG.keys():
-        print(f"for query {key} NDGC scores are {NDCG[key]}")
+    return NDCG
+def p_score(scores_lists):
+    last_scores = [score_list[-1] for score_list in scores_lists]
+    return last_scores
+
+if __name__ == "__main__":
+
+    report_data = {}
+    for p in range(1, 15 + 1):
+        report_data[p] = {}
+        okapi_NDCG = run_NDGG_for_report(p, "okapi-TF.txt")
+        vector_space_NDCG = run_NDGG_for_report(p, "vector-space.txt")
+        query_keys = list(okapi_NDCG.keys())
+        okapi_scores = p_score(list(okapi_NDCG.values()))
+        vector_space_score = p_score(list(vector_space_NDCG.values()))
+
+        report_data[p]["Okapi TF"] = dict(zip(query_keys, okapi_scores))
+        report_data[p]["Okapi TF"]["Average NDCG"] = reduce(lambda a, b: a + b, okapi_scores) / len(okapi_scores)
+        report_data[p]["Vector Space"] = dict(zip(query_keys, vector_space_score))
+        report_data[p]["Vector Space"]["Average NDCG"] = reduce(lambda a, b: a + b, vector_space_score) / len(vector_space_score)
+
+    with open("report_data.json", "w") as data_file:
+        dump(report_data, data_file , indent=2)
+
+
+
+
+
+
+
+
+    # c = Command()
+    #
+    # default_options = {
+    #     'p': 3
+    # }
+    #
+    # c.set_defaults(default_options)
+    #
+    # if c.contains_definitions('p'):
+    #     p = int(c.get_definition('p'))
+    # else:
+    #     p = c.get_default('p')
+    #
+    #
+    # base_score_file = c.arg0
+    # my_score_file = c.arg1
+    #
+    # with open(base_score_file) as corpus:
+    #     base_rank_dict = doc_dict(corpus, True)
+    # corpus.close()
+    #
+    # IDCGp = {}
+    # for key in base_rank_dict.keys():
+    #     base_discounted_gain = discounted_gains(list(base_rank_dict[key].values()), p)
+    #     IDCGp[key] = accummulate_gains(base_discounted_gain)
+    #
+    # with open(my_score_file) as my_score:
+    #     document_positions = doc_dict(my_score, False)
+    #
+    #
+    # my_rank_dict = get_scores(document_positions, base_rank_dict, p)
+    # DCGp = {}
+    #
+    # for key in my_rank_dict.keys():
+    #     my_discounted_gains = discounted_gains(list(my_rank_dict[key].values()), p)
+    #     DCGp[key] = accummulate_gains(my_discounted_gains)
+    #
+    # # for key in DCGp.keys():
+    # #     print(DCGp[key])
+    #
+    # NDCG = calc_NDCG(DCGp, IDCGp)
+    #
+    # for key in NDCG.keys():
+    #     print(f"for query {key} NDGC scores are {NDCG[key]}")
