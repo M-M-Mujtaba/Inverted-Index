@@ -21,7 +21,7 @@ def load_docinfo(docinfo_file):
 def idf(terms, n):
     idf = []
     for term in terms:
-        idf.append(log((n) / (term['df'])))
+        idf.append(log(n / (term['df'])))
     return idf
 
 
@@ -51,17 +51,18 @@ def vector_score(term_info, doc_info, query_info):
     scores = {}
     query_mag = calc_mag(query_info)
     inverse_df = idf(term_info, len(doc_info))
+    query_info_dicts = list(query_info.values())
     for index, term in enumerate(term_info):
         keys = list(term.keys())
         for key in keys[1:]:
             if scores.get(key, False):
-                scores[key] += term[key]['tf'] * inverse_df[index]
+                scores[key] += term[key]['tf'] * inverse_df[index] * query_info_dicts[index]['tf']
             else:
-                scores[key] = term[key]['tf'] * inverse_df[index]
+                scores[key] = term[key]['tf'] * inverse_df[index] * query_info_dicts[index]['tf']
 
     for key in scores.keys():
         a = scores[key]
-        scores[key] /= (float(doc_info[key].magnitude) * query_mag)
+        scores[key] /= (float(doc_info[key].magnitude) * query_mag)  # int(doc_info[key].len)
 
     scores = dict(sorted(scores.items(), key=lambda item: item[1], reverse=True))
     return scores
@@ -91,6 +92,7 @@ def okapi_tF(term_info, doc_info, L_davg):
     scores = dict(sorted(scores.items(), key=lambda item: item[1], reverse=True))
     return scores
 
+
 def query_score(score, the_query):
     term_info = extract_term_info(the_query)
 
@@ -104,9 +106,10 @@ def query_score(score, the_query):
 
     # print(scores)
     # print(len(scores.keys()))
-    #print(the_query)
+    # print(the_query)
     for i, key in enumerate(scores.keys()):
         yield f"{doc_info[key].path} {i + 1}  {scores[key]}"
+
 
 if __name__ == "__main__":
     c = Command()
@@ -138,6 +141,6 @@ if __name__ == "__main__":
 
     # print(scores)
     # print(len(scores.keys()))
-    #print(the_query)
+    # print(the_query)
     for i, key in enumerate(scores.keys()):
         print(f"{doc_info[key].path} {i + 1}  {scores[key]}")

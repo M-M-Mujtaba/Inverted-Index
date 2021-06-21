@@ -30,4 +30,4 @@ if __name__ == "__main__":
             if query.tag == 'query':
                 #print(f"from query {quries.attrib['number']}: query {query.text}")
                 for document in query_score(score, query.text):
-                    print(f"{quries.attrib['number']} 0 {document} run{run}")
+                    print(f"{quries.attrib['number']} 0 {document[2:]} run{run}")
